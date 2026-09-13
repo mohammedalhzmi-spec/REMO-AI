@@ -625,6 +625,18 @@ fun DashboardScreen(viewModel: MainViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Image(
+                        painter = painterResource(id = R.drawable.img_app_icon),
+                        contentDescription = "أيقونة التطبيق",
+                        modifier = Modifier
+                            .padding(start = 12.dp, end = 8.dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .border(1.5.dp, GoldPrimary, CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                },
                 title = {
                     Column {
                         Text(
@@ -1289,9 +1301,29 @@ fun ChatScreen(viewModel: MainViewModel = viewModel()) {
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                         .fillMaxWidth()
                 ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Security,
+                            contentDescription = null,
+                            tint = GoldPrimary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "نظام الحماية مفعل: حظر وتطهير تلقائي للألفاظ المسيئة والإباحية",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                        )
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),

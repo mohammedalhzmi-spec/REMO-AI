@@ -270,6 +270,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val doWebSearch = forceWebSearch || _isWebSearchEnabled.value
 
         viewModelScope.launch {
+            // 🛡️ فحص الأمان الأخلاقي: حجب وحذف الألفاظ المسيئة والإباحية تلقائياً وعدم الرد عليها
+            if (ContentSafetyFilter.containsExplicitOrAbusiveContent(effectivePrompt)) {
+                val sanitizedDisplay = ContentSafetyFilter.sanitizeAndRedact(effectivePrompt)
+                val displayMsg = if (bitmap != null) "[صورة مرفقة] $sanitizedDisplay" else sanitizedDisplay
+                val userMsg = ChatMessage(text = displayMsg, isUser = true)
+                _messages.value = _messages.value + userMsg
+
+                val rejectionMsg = ChatMessage(
+                    text = ContentSafetyFilter.getRejectionResponse(),
+                    isUser = false
+                )
+                _messages.value = _messages.value + rejectionMsg
+                _isLoading.value = false
+                return@launch
+            }
+
             val userKey = _userApiKey.value
             storageManager.incrementAndCheckQuota()
 
