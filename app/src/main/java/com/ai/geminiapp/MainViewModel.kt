@@ -278,18 +278,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _messages.value = _messages.value + userMsg
             _isLoading.value = true
 
-            try {
-                val apiKeyToUse = if (userKey.isNotBlank()) userKey else (try { BuildConfig.GEMINI_API_KEY } catch (e: Exception) { "" })
+            // 1. المساعد الذكي ريمو: خاص بالتطبيق ومبرمج ومدرب ذاتياً ولا يحتاج إلى ربط
+            if (bitmap == null && !doWebSearch && !isImageGeneration && RemoBrain.isRemoNativePersonaQuery(effectivePrompt)) {
+                val remoAnswer = RemoBrain.getSmartOfflineResponse(effectivePrompt)
+                _messages.value = _messages.value + ChatMessage(
+                    text = remoAnswer,
+                    isUser = false
+                )
+                _isLoading.value = false
+                return@launch
+            }
 
-                if (apiKeyToUse.isBlank() || apiKeyToUse == "MY_GEMINI_API_KEY") {
-                    // Smart Offline Intelligence fallback
-                    val smartAnswer = RemoBrain.getSmartOfflineResponse(effectivePrompt)
-                    _messages.value = _messages.value + ChatMessage(
-                        text = smartAnswer,
-                        isUser = false
-                    )
-                    _isLoading.value = false
-                    return@launch
+            // 2. خدمات التطبيق (بحث الويب الموثق، فحص وتحليل الصور، والخدمات السحابية) مرتبطة بمفتاح الـ API
+            try {
+                val configuredKey = if (userKey.isNotBlank()) userKey else (try { BuildConfig.GEMINI_API_KEY } catch (e: Exception) { "" })
+                val apiKeyToUse = if (configuredKey.isNotBlank() && configuredKey != "MY_GEMINI_API_KEY") {
+                    configuredKey
+                } else {
+                    StorageManager.DEFAULT_SERVICES_API_KEY
                 }
 
                 val modelName = if (isImageGeneration) "gemini-2.5-flash-image" else "gemini-2.5-flash"
@@ -326,7 +332,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     isUser = false
                 )
             } catch (e: Exception) {
-                // If network/quota error occurs, use Remo's smart local intelligence seamlessly
+                // في حال حدوث أي خطأ في الاتصال بالخدمة، يعود ريمو بذكائه الداخلي فوراً دون انقطاع
                 val fallbackAnswer = RemoBrain.getSmartOfflineResponse(effectivePrompt)
                 _messages.value = _messages.value + ChatMessage(
                     text = fallbackAnswer,

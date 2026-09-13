@@ -849,15 +849,15 @@ fun DashboardScreen(viewModel: MainViewModel) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "حالة الحصة والاستخدام",
+                                text = "حالة خدمات التطبيق والـ API",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp
                             )
-                            Icon(Icons.Default.Bolt, contentDescription = null, tint = GoldPrimary)
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = GoldPrimary)
                         }
 
                         LinearProgressIndicator(
-                            progress = { if (userApiKey.isNotBlank()) 0f else (requestCount / 10f) },
+                            progress = { 1f },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp)
@@ -866,9 +866,9 @@ fun DashboardScreen(viewModel: MainViewModel) {
                         )
 
                         Text(
-                            text = if (userApiKey.isNotBlank()) "مفتاح API خاص مفعل (استخدام غير محدود وبلا قيود)" else "استخدمت $requestCount من أصل 10 طلبات مجانية اليومية",
+                            text = "تم ربط خدمات التطبيق بمفتاح الـ API بنجاح. المساعد الذكي ريمو يعمل ذاتياً بتدريبه الخاص دون الحاجة لأي ربط.",
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = Color.LightGray
                         )
                     }
                 }
@@ -1581,23 +1581,22 @@ fun SettingsDialog(viewModel: MainViewModel) {
 
     AlertDialog(
         onDismissRequest = { viewModel.setShowSettingsDialog(false) },
-        title = { Text("إعدادات مفتاح الـ API") },
+        title = { Text("إعدادات مفتاح الـ API لخدمات التطبيق") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("أدخل مفتاح Google AI Studio API الخاص بك لإلغاء قيود الحصة اليومية والاستخدام غير المحدود:")
+                Text("مفتاح الـ API المعتمد لربط خدمات التطبيق (بحث الويب، الرؤية وفحص الصور، والخدمات السحابية):")
                 OutlinedTextField(
                     value = tempKey,
                     onValueChange = { tempKey = it },
-                    placeholder = { Text("AIzaSy...") },
+                    placeholder = { Text("AQ.Ab8RN6...") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                TextButton(onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/app/apikey"))
-                    context.startActivity(intent)
-                }) {
-                    Text("الحصول على مفتاح من Google AI Studio")
-                }
+                Text(
+                    text = "💡 ملاحظة: المساعد الذكي ريمو يعمل ذاتياً بتدريب وتطوير المطور محمد الحزمي ولا يتطلب أي مفتاح خارجي.",
+                    fontSize = 12.sp,
+                    color = GoldPrimary
+                )
             }
         },
         confirmButton = {

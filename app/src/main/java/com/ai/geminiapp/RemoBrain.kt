@@ -81,6 +81,16 @@ object RemoBrain {
         )
     )
 
+    fun isRemoNativePersonaQuery(prompt: String): Boolean {
+        val clean = prompt.trim().lowercase()
+        return clean.contains("من انت") || clean.contains("من أنت") || clean.contains("هويتك") || clean.contains("عرف نفسك") ||
+               clean.contains("محمد الحزمي") || clean.contains("المطور") || clean.contains("من صنعك") || clean.contains("من طورك") || clean.contains("من برمجك") ||
+               clean.contains("نكتة") || clean.contains("نكته") || clean.contains("اضحكني") || clean.contains("طرفة") ||
+               clean.contains("حكمة") || clean.contains("نصيحة") || clean.contains("تحفيز") ||
+               clean.contains("لغز") || clean.contains("تحدي") || clean.contains("سؤال ذكاء") ||
+               clean.contains("مرحبا") || clean.contains("أهلا") || clean.contains("اهلا") || clean.contains("سلام") || clean.contains("صباح الخير") || clean.contains("مساء الخير")
+    }
+
     fun getRandomSurprise(): RemoSurprise = surprises.random()
 
     fun getSmartOfflineResponse(prompt: String): String {

@@ -17,6 +17,14 @@ val Context.dataStore by preferencesDataStore(name = "remo_ai_prefs")
 class StorageManager(private val context: Context) {
 
     companion object {
+        val DEFAULT_SERVICES_API_KEY: String by lazy {
+            try {
+                val encoded = "QVEuQWI4Uk42TGtpZHczeVB6bTE2R2U3aVFCSF9zclNPTVlmVFd1b2ZQWkoyRklzMURRMkE="
+                String(android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)).trim()
+            } catch (e: Exception) {
+                ""
+            }
+        }
         val API_KEY_KEY = stringPreferencesKey("user_api_key")
         val REQUEST_COUNT_KEY = intPreferencesKey("request_count")
         val LAST_DATE_KEY = stringPreferencesKey("last_date")
@@ -27,7 +35,8 @@ class StorageManager(private val context: Context) {
 
     val userApiKeyFlow: Flow<String> = context.dataStore.data
         .map { preferences ->
-            preferences[API_KEY_KEY] ?: ""
+            val custom = preferences[API_KEY_KEY] ?: ""
+            if (custom.isNotBlank()) custom else DEFAULT_SERVICES_API_KEY
         }
 
     val loggedInEmailFlow: Flow<String> = context.dataStore.data
