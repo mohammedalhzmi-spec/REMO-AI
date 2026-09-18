@@ -117,6 +117,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _userApiKey = MutableStateFlow("")
     val userApiKey: StateFlow<String> = _userApiKey.asStateFlow()
 
+    private val _selectedModel = MutableStateFlow("gemini-flash-latest")
+    val selectedModel: StateFlow<String> = _selectedModel.asStateFlow()
+
+    fun setSelectedModel(model: String) {
+        _selectedModel.value = model
+        viewModelScope.launch {
+            storageManager.saveSelectedModel(model)
+        }
+    }
+
     private val _showQuotaDialog = MutableStateFlow(false)
     val showQuotaDialog: StateFlow<Boolean> = _showQuotaDialog.asStateFlow()
 
@@ -203,6 +213,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             storageManager.languageFlow.collect { lang ->
                 _language.value = lang
+            }
+        }
+        viewModelScope.launch {
+            storageManager.selectedModelFlow.collect { model ->
+                _selectedModel.value = model
             }
         }
         viewModelScope.launch {
@@ -621,7 +636,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             if (hasValidKey && quotaAllowed) {
                 try {
-                    val modelName = "gemini-flash-latest"
+                    val modelName = _selectedModel.value
                     val generativeModel = GenerativeModel(
                         modelName = modelName,
                         apiKey = configuredKey,
@@ -637,15 +652,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         effectivePrompt
                     }
 
+                    // Conversation Context / Memory: pass past messages as history
+                    val historyMessages = _messages.value.dropLast(1)
+                    val chatHistory = historyMessages.map { msg ->
+                        com.google.ai.client.generativeai.type.content(role = if (msg.isUser) "user" else "model") {
+                            text(msg.text)
+                        }
+                    }
+
+                    val chat = generativeModel.startChat(history = chatHistory)
+
                     val response = if (bitmap != null) {
-                        generativeModel.generateContent(
+                        chat.sendMessage(
                             com.google.ai.client.generativeai.type.content {
                                 image(bitmap)
                                 text(promptForModel)
                             }
                         )
                     } else {
-                        generativeModel.generateContent(promptForModel)
+                        chat.sendMessage(promptForModel)
                     }
 
                     val responseText = response.text ?: RemoBrain.getSmartOfflineResponse(

@@ -42,6 +42,7 @@ class StorageManager(private val context: Context) {
         val LOGGED_IN_EMAIL_KEY = stringPreferencesKey("logged_in_email")
         val IS_DARK_MODE_KEY = booleanPreferencesKey("is_dark_mode")
         val LANGUAGE_KEY = stringPreferencesKey("language")
+        val SELECTED_MODEL_KEY = stringPreferencesKey("selected_model")
 
         // Dedicated DataStore Keys for Daily Gemini Usage & Chat Continuity
         val DAILY_GEMINI_USAGE_KEY = intPreferencesKey("daily_gemini_usage_count")
@@ -131,6 +132,11 @@ class StorageManager(private val context: Context) {
             preferences[LANGUAGE_KEY] ?: "ar"
         }
 
+    val selectedModelFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[SELECTED_MODEL_KEY] ?: "gemini-flash-latest"
+        }
+
     val requestCountFlow: Flow<Int> = context.dataStore.data
         .map { preferences ->
             val currentDate = getCurrentDate()
@@ -163,6 +169,12 @@ class StorageManager(private val context: Context) {
     suspend fun setLanguage(lang: String) {
         context.dataStore.edit { preferences ->
             preferences[LANGUAGE_KEY] = lang
+        }
+    }
+
+    suspend fun saveSelectedModel(model: String) {
+        context.dataStore.edit { preferences ->
+            preferences[SELECTED_MODEL_KEY] = model
         }
     }
 

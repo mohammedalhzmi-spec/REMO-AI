@@ -1740,24 +1740,84 @@ fun AboutScreen(viewModel: MainViewModel) {
 @Composable
 fun SettingsDialog(viewModel: MainViewModel) {
     var tempKey by remember { mutableStateOf(viewModel.userApiKey.value) }
+    val selectedModel by viewModel.selectedModel.collectAsState()
     val context = LocalContext.current
+
+    val modelsList = listOf(
+        "gemini-flash-latest" to "Gemini Flash Latest (الأحدث والأسرع - الموصى به ⚡)",
+        "gemini-1.5-flash" to "Gemini 1.5 Flash (سريع ومستقر 🚀)",
+        "gemini-2.5-flash" to "Gemini 2.5 Flash (إصدار متقدم فائق الذكاء 🧠)",
+        "gemini-pro" to "Gemini Pro (احترافي للتحليل العميق 🔬)"
+    )
 
     AlertDialog(
         onDismissRequest = { viewModel.setShowSettingsDialog(false) },
-        title = { Text("إعدادات مفتاح الـ API لخدمات التطبيق") },
+        title = { Text("⚙️ إدارة النماذج اللغوية وربط API") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("مفتاح الـ API المعتمد لربط خدمات التطبيق (بحث الويب، الرؤية وفحص الصور، والخدمات السحابية):")
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "🧠 إدارة النماذج اللغوية (Model Management):",
+                    fontWeight = FontWeight.Bold,
+                    color = GoldPrimary,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = "اختر النموذج اللغوي المفضل لتشغيل ذكاء ريمو:",
+                    fontSize = 12.sp
+                )
+
+                modelsList.forEach { (modelId, modelLabel) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setSelectedModel(modelId) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        RadioButton(
+                            selected = (selectedModel == modelId),
+                            onClick = { viewModel.setSelectedModel(modelId) }
+                        )
+                        Text(text = modelLabel, fontSize = 12.sp)
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                Text(
+                    text = "💬 سياق المحادثة والذاكرة (Memory):",
+                    fontWeight = FontWeight.Bold,
+                    color = GoldPrimary,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = "✓ ريمو يحتفظ بسياق المحادثة والذاكرة (Memory) تلقائياً عبر كل رسالة جديدة لتجربة حوار مترابطة وذكية.",
+                    fontSize = 12.sp
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                Text(
+                    text = "🔑 مفتاح الـ API المعتمد لخدمات التطبيق:",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
                 OutlinedTextField(
                     value = tempKey,
                     onValueChange = { tempKey = it },
-                    placeholder = { Text("AQ.Ab8RN6...") },
+                    placeholder = { Text("AIzaSy...") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
                 Text(
-                    text = "💡 ملاحظة: المساعد الذكي ريمو يعمل ذاتياً بتدريب وتطوير المطور محمد الحزمي ولا يتطلب أي مفتاح خارجي.",
-                    fontSize = 12.sp,
+                    text = "💡 ملاحظة: المساعد الذكي ريمو يعمل ذاتياً بتدريب وتطوير المطور محمد الحزمي.",
+                    fontSize = 11.sp,
                     color = GoldPrimary
                 )
             }
@@ -1766,14 +1826,14 @@ fun SettingsDialog(viewModel: MainViewModel) {
             Button(onClick = {
                 viewModel.saveUserApiKey(tempKey)
                 viewModel.setShowSettingsDialog(false)
-                Toast.makeText(context, "تم الحفظ", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "تم حفظ إعدادات النموذج والـ API بنجاح ✨", Toast.LENGTH_SHORT).show()
             }) {
-                Text("حفظ")
+                Text("حفظ التغييرات")
             }
         },
         dismissButton = {
             TextButton(onClick = { viewModel.setShowSettingsDialog(false) }) {
-                Text("إلغاء")
+                Text("إغلاق")
             }
         }
     )
