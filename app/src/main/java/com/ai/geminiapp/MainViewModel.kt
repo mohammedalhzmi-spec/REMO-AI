@@ -641,7 +641,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         modelName = modelName,
                         apiKey = configuredKey,
                         systemInstruction = com.google.ai.client.generativeai.type.content {
-                            text(activeSystemPrompt)
+                            text(RemoBrain.SYSTEM_PROMPT)
                         }
                     )
 
