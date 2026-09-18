@@ -682,14 +682,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     recordAndSaveAiResponse(responseText, webSources)
                 } catch (t: Throwable) {
-                    // في حال حدوث أي خطأ في الاتصال بالخدمة أو نفاد الحصة، يعود ريمو بذكائه الداخلي فوراً دون انقطاع
-                    val fallbackAnswer = RemoBrain.getSmartOfflineResponse(
+                    val errorMsg = t.message ?: ""
+                    val isQuotaOrRateLimit = errorMsg.contains("resource_exhausted", ignoreCase = true) || 
+                                           errorMsg.contains("quota", ignoreCase = true) || 
+                                           errorMsg.contains("rate-limit", ignoreCase = true) ||
+                                           errorMsg.contains("429")
+                    
+                    val baseFallback = RemoBrain.getSmartOfflineResponse(
                         effectivePrompt,
                         isWebSearch = needsWebSearch,
                         isImageGen = isImageGeneration,
                         hasImage = (bitmap != null)
                     )
-                    recordAndSaveAiResponse(fallbackAnswer, webSources)
+                    
+                    val finalFallback = if (isQuotaOrRateLimit) {
+                        "⚠️ **تنبيه السحابة (Rate Limit / Quota Exceeded):**\nلقد تم بلوغ الحد المؤقت للطلبات في الخادم السحابي الحالي.\n\n🛡️ **التحويل التلقائي:** قام ريمو بالتحويل الفوري إلى **الوضع المحلي الذكي والمدرب** لخدمتك فوراً دون انقطاع!\n\n$baseFallback"
+                    } else {
+                        baseFallback
+                    }
+                    recordAndSaveAiResponse(finalFallback, webSources)
                 } finally {
                     _isLoading.value = false
                 }
