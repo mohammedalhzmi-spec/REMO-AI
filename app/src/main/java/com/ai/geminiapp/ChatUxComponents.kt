@@ -550,3 +550,96 @@ private fun formatSessionDate(timestamp: Long): String {
         else -> SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()).format(Date(timestamp))
     }
 }
+
+/**
+ * Dedicated Sources and References Component for displaying web search results and links in chat.
+ */
+@Composable
+fun SourcesReferencesView(sources: List<WebSource>) {
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    if (sources.isNotEmpty()) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)),
+            border = BorderStroke(1.dp, GoldPrimary.copy(alpha = 0.4f))
+        ) {
+            Column(
+                modifier = Modifier.padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null,
+                        tint = GoldPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "المصادر والمراجع الموثقة من الويب (2026):",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = GoldPrimary
+                    )
+                }
+
+                sources.forEach { source ->
+                    Surface(
+                        onClick = {
+                            try {
+                                if (source.url.isNotBlank()) {
+                                    uriHandler.openUri(source.url)
+                                }
+                            } catch (e: Throwable) {
+                                // Ignore invalid uri
+                            }
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = source.title,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (source.snippet.isNotBlank()) {
+                                    Text(
+                                        text = source.snippet,
+                                        fontSize = 10.sp,
+                                        color = Color.Gray,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.Default.OpenInNew,
+                                contentDescription = "فتح الرابط",
+                                tint = GoldPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

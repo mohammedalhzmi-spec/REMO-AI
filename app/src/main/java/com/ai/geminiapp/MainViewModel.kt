@@ -15,7 +15,8 @@ data class ChatMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
     val text: String,
     val isUser: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val sources: List<WebSource> = emptyList()
 )
 
 data class ServiceToolItem(
@@ -35,6 +36,10 @@ sealed class AppScreen {
     object SignUp : AppScreen()
     object Dashboard : AppScreen()
     object Chat : AppScreen()
+    object GeneralChat : AppScreen()
+    object ImageChat : AppScreen()
+    object CodeChat : AppScreen()
+    object AudioChat : AppScreen()
     object About : AppScreen()
     object Templates : AppScreen()
     object Favorites : AppScreen()
@@ -562,8 +567,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
             _isLoading.value = true
 
-            fun recordAndSaveAiResponse(text: String) {
-                val aiMsg = ChatMessage(text = text, isUser = false)
+            fun recordAndSaveAiResponse(text: String, sources: List<WebSource> = emptyList()) {
+                val aiMsg = ChatMessage(text = text, isUser = false, sources = sources)
                 _messages.value = _messages.value + aiMsg
                 viewModelScope.launch {
                     chatSessionDao.insertMessage(
@@ -582,11 +587,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
+            val currentScreenState = _currentScreen.value
+            val activeSystemPrompt = when (currentScreenState) {
+                is AppScreen.ImageChat -> RemoBrain.IMAGE_CHAT_SYSTEM_PROMPT
+                is AppScreen.CodeChat -> RemoBrain.CODE_CHAT_SYSTEM_PROMPT
+                is AppScreen.AudioChat -> RemoBrain.AUDIO_CHAT_SYSTEM_PROMPT
+                else -> RemoBrain.SYSTEM_PROMPT
+            }
+
+            val needsWebSearch = doWebSearch || effectivePrompt.contains("ابحث") || effectivePrompt.contains("بحث") || 
+                                 effectivePrompt.contains("ما هو") || effectivePrompt.contains("ما هي") || 
+                                 effectivePrompt.contains("أخبار") || effectivePrompt.contains("معلومات") ||
+                                 effectivePrompt.contains("من هو") || effectivePrompt.contains("متى")
+
+            val webSources = if (needsWebSearch) {
+                WebSearchHelper.searchWeb(effectivePrompt)
+            } else {
+                emptyList()
+            }
+
             // 1. المساعد الذكي ريمو: استجابة فورية ذكية لأسئلة الهوية والترحيب والشخصية
-            if (bitmap == null && !doWebSearch && !isImageGeneration && RemoBrain.isRemoNativePersonaQuery(effectivePrompt)) {
+            if (bitmap == null && !doWebSearch && !isImageGeneration && currentScreenState is AppScreen.GeneralChat && RemoBrain.isRemoNativePersonaQuery(effectivePrompt)) {
                 delay(200)
                 val remoAnswer = RemoBrain.getSmartOfflineResponse(effectivePrompt)
-                recordAndSaveAiResponse(remoAnswer)
+                recordAndSaveAiResponse(remoAnswer, webSources)
                 _isLoading.value = false
                 return@launch
             }
@@ -602,12 +626,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         modelName = modelName,
                         apiKey = configuredKey,
                         systemInstruction = com.google.ai.client.generativeai.type.content {
-                            text(RemoBrain.SYSTEM_PROMPT)
+                            text(activeSystemPrompt)
                         }
                     )
 
-                    val promptForModel = if (doWebSearch) {
-                        "يرجى البحث الموثق في الويب بدقة حول هذا الاستفسار، وتقديم إجابة غنية بالمعلومات، مع ذكر المصدر والرابط في النهاية تحت قسم '🔍 المصدر والتوثيق من الويب':\n$effectivePrompt"
+                    val promptForModel = if (needsWebSearch && webSources.isNotEmpty()) {
+                        val sourcesText = webSources.joinToString("\n") { "- ${it.title}: ${it.url} (${it.snippet})" }
+                        "بناءً على نتائج البحث والتوثيق التالية من الويب:\n$sourcesText\n\nأجب عن استفسار المستخدم بدقة واحترافية: $effectivePrompt"
                     } else {
                         effectivePrompt
                     }
@@ -625,21 +650,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     val responseText = response.text ?: RemoBrain.getSmartOfflineResponse(
                         effectivePrompt,
-                        isWebSearch = doWebSearch,
+                        isWebSearch = needsWebSearch,
                         isImageGen = isImageGeneration,
                         hasImage = (bitmap != null)
                     )
 
-                    recordAndSaveAiResponse(responseText)
+                    recordAndSaveAiResponse(responseText, webSources)
                 } catch (t: Throwable) {
                     // في حال حدوث أي خطأ في الاتصال بالخدمة أو نفاد الحصة، يعود ريمو بذكائه الداخلي فوراً دون انقطاع
                     val fallbackAnswer = RemoBrain.getSmartOfflineResponse(
                         effectivePrompt,
-                        isWebSearch = doWebSearch,
+                        isWebSearch = needsWebSearch,
                         isImageGen = isImageGeneration,
                         hasImage = (bitmap != null)
                     )
-                    recordAndSaveAiResponse(fallbackAnswer)
+                    recordAndSaveAiResponse(fallbackAnswer, webSources)
                 } finally {
                     _isLoading.value = false
                 }
@@ -649,7 +674,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     delay(300)
                     val baseOfflineAnswer = RemoBrain.getSmartOfflineResponse(
                         effectivePrompt,
-                        isWebSearch = doWebSearch,
+                        isWebSearch = needsWebSearch,
                         isImageGen = isImageGeneration,
                         hasImage = (bitmap != null)
                     )
@@ -658,9 +683,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     } else {
                         baseOfflineAnswer
                     }
-                    recordAndSaveAiResponse(finalAnswer)
+                    recordAndSaveAiResponse(finalAnswer, webSources)
                 } catch (t: Throwable) {
-                    recordAndSaveAiResponse("أهلاً بك يا صديقي! أنا ريمو معك دائماً للإجابة على كافة أسئلتك.")
+                    recordAndSaveAiResponse("أهلاً بك يا صديقي! أنا ريمو معك دائماً للإجابة على كافة أسئلتك.", webSources)
                 } finally {
                     _isLoading.value = false
                 }

@@ -136,7 +136,10 @@ fun AppRootNavigator(viewModel: MainViewModel) {
             is AppScreen.Login -> LoginScreen(viewModel)
             is AppScreen.SignUp -> SignUpScreen(viewModel)
             is AppScreen.Dashboard -> DashboardScreen(viewModel)
-            is AppScreen.Chat -> ChatScreen(viewModel)
+            is AppScreen.Chat, is AppScreen.GeneralChat -> ChatScreen(viewModel, title = "ريمو - صديقك الذكي ✨", subtitle = "المساعد الحصري • محمد الحزمي")
+            is AppScreen.ImageChat -> ChatScreen(viewModel, title = "استوديو ريمو للصور البصرية 🎨", subtitle = "توليد وتصميم الأفكار والصور")
+            is AppScreen.CodeChat -> ChatScreen(viewModel, title = "استوديو ريمو للأكواد والبرمجة 💻", subtitle = "كتابة وتصحيح وتطوير البرمجيات")
+            is AppScreen.AudioChat -> ChatScreen(viewModel, title = "استوديو ريمو للصوتيات والبودكاست 🎵", subtitle = "شعر، موسيقى، وسكريبتات بودكاست")
             is AppScreen.About -> AboutScreen(viewModel)
             is AppScreen.Templates -> TemplatesScreen(viewModel)
             is AppScreen.Favorites -> FavoritesScreen(viewModel)
@@ -986,7 +989,13 @@ fun DashboardScreen(viewModel: MainViewModel) {
 
                 DashboardServicesView(
                     onToolSelected = { tool ->
-                        viewModel.openToolDialog(tool)
+                        when (tool.category) {
+                            "code" -> viewModel.navigateTo(AppScreen.CodeChat)
+                            "image" -> viewModel.navigateTo(AppScreen.ImageChat)
+                            "audio" -> viewModel.navigateTo(AppScreen.AudioChat)
+                            else -> viewModel.navigateTo(AppScreen.GeneralChat)
+                        }
+                        viewModel.sendMessage(tool.defaultPrompt)
                     }
                 )
             }
@@ -1056,7 +1065,11 @@ fun DashboardCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(viewModel: MainViewModel = viewModel()) {
+fun ChatScreen(
+    viewModel: MainViewModel = viewModel(),
+    title: String = "ريمو - صديقك الذكي ✨",
+    subtitle: String = "المساعد الحصري • محمد الحزمي"
+) {
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isWebSearchEnabled by viewModel.isWebSearchEnabled.collectAsState()
@@ -1216,9 +1229,9 @@ fun ChatScreen(viewModel: MainViewModel = viewModel()) {
                                 )
                             }
                             Column {
-                                Text(text = "ريمو - صديقك الذكي ✨", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(text = title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text(
-                                    text = "المساعد الحصري • محمد الحزمي",
+                                    text = subtitle,
                                     fontSize = 10.sp,
                                     color = GoldPrimary
                                 )
@@ -1520,6 +1533,11 @@ fun ChatBubble(message: ChatMessage, viewModel: MainViewModel, tts: TextToSpeech
                         fontSize = 14.sp,
                         lineHeight = 21.sp
                     )
+
+                    if (message.sources.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SourcesReferencesView(sources = message.sources)
+                    }
 
                     Spacer(modifier = Modifier.height(6.dp))
 
