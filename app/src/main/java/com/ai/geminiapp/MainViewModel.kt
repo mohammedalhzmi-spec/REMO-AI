@@ -631,7 +631,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // 2. فحص توفر مفتاح Gemini صالح ومراعاة الحصة
-            val configuredKey = if (userKey.isNotBlank()) userKey else (try { BuildConfig.GEMINI_API_KEY } catch (e: Throwable) { "" })
+            val configuredKey = if (userKey.isNotBlank()) userKey else (System.getenv("GEMINI_API_KEY1") ?: System.getenv("GEMINI_API_KEY") ?: try { BuildConfig.GEMINI_API_KEY } catch (e: Throwable) { "" })
             val hasValidKey = configuredKey.isNotBlank() && configuredKey != "MY_GEMINI_API_KEY" && configuredKey.startsWith("AIza")
 
             if (hasValidKey && quotaAllowed) {
