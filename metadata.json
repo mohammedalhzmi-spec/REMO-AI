@@ -1,0 +1,7 @@
+{
+  "name": "REMO AI",
+  "description": "REMO AI - Intelligent Assistant powered by Gemini with Smart Daily Quota",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
