@@ -15,7 +15,7 @@ object ContentSafetyFilter {
         "سكسي", "مثيره", "شهوة", "شهواني", "مفاخذة", "اغتصاب", "نكاح",
 
         // Sexually Explicit & Pornographic Keywords (English)
-        "porn", "pornography", "porno", "xxx", "nsfw", "sex", "sexy", "sexual",
+        "porn", "pornography", "porno", "xxx", "nsfw", "sexy", "sexual",
         "nude", "nudity", "naked", "erotic", "orgasm", "penis", "vagina", "pussy",
         "dick", "cock", "boobs", "breast", "slut", "whore", "bitch", "blowjob",
         "handjob", "masturbat", "anal", "rape", "stripper", "hentai",
