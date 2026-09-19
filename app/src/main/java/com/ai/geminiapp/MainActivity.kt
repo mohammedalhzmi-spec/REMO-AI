@@ -123,6 +123,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppRootNavigator(viewModel: MainViewModel) {
     val currentScreen by viewModel.currentScreen.collectAsState()
+    
+    // Add BackHandler to intercept back presses
+    androidx.activity.compose.BackHandler(enabled = currentScreen != AppScreen.Dashboard && currentScreen != AppScreen.Welcome) {
+        viewModel.navigateBack()
+    }
+
     val showQuotaDialog by viewModel.showQuotaDialog.collectAsState()
     val showSettingsDialog by viewModel.showSettingsDialog.collectAsState()
     val showSurpriseDialog by viewModel.showSurpriseDialog.collectAsState()

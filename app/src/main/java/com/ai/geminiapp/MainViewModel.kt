@@ -406,8 +406,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun navigateBack() {
+        when (_currentScreen.value) {
+            is AppScreen.Chat, is AppScreen.GeneralChat, is AppScreen.ImageChat, is AppScreen.CodeChat, is AppScreen.AudioChat, is AppScreen.DirectGemini, is AppScreen.About, is AppScreen.Templates, is AppScreen.Favorites, is AppScreen.Stats, is AppScreen.Platform -> {
+                _currentScreen.value = AppScreen.Dashboard
+            }
+            is AppScreen.Dashboard -> {
+                // Usually exit or stay, for now do nothing or exit
+            }
+            else -> {
+                // Stay or handle other cases
+            }
+        }
+    }
+
     fun navigateBackFromPlatform() {
-        _currentScreen.value = _previousScreen
+        navigateBack()
     }
 
     private fun triggerDeveloperBanner() {
@@ -601,15 +615,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 WebSearchHelper.searchWeb(effectivePrompt)
             } else {
                 emptyList()
-            }
-
-            // 1. المساعد الذكي ريمو: استجابة فورية ذكية لأسئلة الهوية والترحيب والشخصية (فقط في الدردشة العامة لـ ريمو)
-            if (bitmap == null && !doWebSearch && !isImageGeneration && currentScreenState is AppScreen.GeneralChat && RemoBrain.isRemoNativePersonaQuery(effectivePrompt)) {
-                delay(200)
-                val remoAnswer = RemoBrain.getSmartOfflineResponse(effectivePrompt)
-                recordAndSaveAiResponse(remoAnswer, webSources)
-                _isLoading.value = false
-                return@launch
             }
 
             // 2. فحص توفر مفتاح Gemini صالح ومراعاة الحصة
