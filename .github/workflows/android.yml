@@ -1,0 +1,79 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package APK
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        cache: 'gradle'
+
+    - name: Restore Keystore from base64
+      run: |
+        if [ -f debug.keystore.base64 ]; then
+          echo "Decoding debug.keystore..."
+          base64 -d debug.keystore.base64 > debug.keystore
+        fi
+
+    - name: Prepare environment configuration
+      run: |
+        if [ ! -f .env ]; then
+          echo "Preparing .env configuration..."
+          echo "QVEuQWI4Uk42TGtpZHczeVB6bTE2R2U3aVFCSF9zclNPTVlmVFd1b2ZQWkoyRklzMURRMkE=" | base64 -d > .tmp_key
+          KEY_VAL=$(cat .tmp_key)
+          echo "GEMINI_API_KEY=$KEY_VAL" > .env
+          echo "SERVICES_API_KEY=$KEY_VAL" >> .env
+          rm -f .tmp_key
+        fi
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build Debug APK with Gradle
+      run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+    - name: Prepare APK binary
+      run: |
+        cp app/build/outputs/apk/debug/app-debug.apk REMO-AI-v1.0.apk
+        ls -la REMO-AI-v1.0.apk
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: REMO-AI-v1.0-APK
+        path: REMO-AI-v1.0.apk
+        retention-days: 30
+
+    - name: Create GitHub Release with APK
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v2
+      continue-on-error: true
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: "REMO AI v1.0 - Build #${{ github.run_number }}"
+        body: |
+          ### 🎉 تم بناء تطبيق REMO AI بنجاح!
+          - **المساعد الذكي**: ريمو - صديقك ومساعدك الذكي (تطوير محمد الحزمي).
+          - **الميزات**: بحث موثق في الويب، مفاجآت وألغاز حصرية، استماع صوتي، شاشة قوالب ومفضلة.
+          - **التثبيت**: حمّل ملف `REMO-AI-v1.0.apk` المرفق أدناه وثبّته مباشرة على هاتفك الأندرويد.
+        files: REMO-AI-v1.0.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
